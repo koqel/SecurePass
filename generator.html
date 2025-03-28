@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecurePass - Password Generator & Strength Checker</title>
+    <style>
+        :root {
+            --primary: #4a6ee0;
+            --primary-dark: #3a5bc7;
+            --secondary: #60d394;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --success: #2ecc71;
+            --dark: #2c3e50;
+            --light: #f8f9fa;
+            --gray: #95a5a6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 550px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .logo span {
+            color: var(--secondary);
+        }
+        
+        .subtitle {
+            color: var(--gray);
+            font-size: 1rem;
+        }
+        
+        .password-display {
+            position: relative;
+            background-color: var(--light);
+            border: 2px solid #e6e8eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+        }
+        
+        .password-display.copied {
+            border-color: var(--success);
+            background-color: rgba(46, 204, 113, 0.1);
+        }
+        
+        .password-field {
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            font-weight: bold;
+            word-break: break-all;
+            max-width: 90%;
+        }
+        
+        .copy-btn {
+            background-color: transparent;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .copy-btn:hover {
+            background-color: rgba(74, 110, 224, 0.1);
+        }
+        
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .generate-section {
+            margin-bottom: 30px;
+        }
+        
+        .strength-meter {
+            height: 10px;
+            background-color: #e6e8eb;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        
+        .strength-meter-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 5px;
+            transition: width 0.5s ease, background-color 0.5s ease;
+        }
+        
+        .strength-text {
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .settings {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .setting-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .setting-label {
+            font-weight: 600;
+        }
+        
+        .length-controls {
+            display: flex;
+            align-items: center;
+        }
+        
+        .length-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        
+        .length-btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .length-btn:active {
+            transform: scale(0.9);
+        }
+        
+        .length-value {
+            margin: 0 12px;
+            font-weight: bold;
+            min-width: 30px;
+            text-align: center;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--primary);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        .gen-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(74, 110, 224, 0.2);
+        }
+        
+        .gen-btn:hover {
+            background-color: var(--primary-dark);
+            box-shadow: 0 6px 16px rgba(74, 110, 224, 0.3);
+        }
+        
+        .gen-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .history-panel {
+            margin-top: 30px;
+            border-top: 1px solid #e6e8eb;
+            padding-top: 20px;
+        }
+        
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .history-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .history-actions button {
+            background-color: transparent;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .history-actions button:hover {
+            background-color: rgba(74, 110, 224, 0.1);
+        }
+        
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background-color: var(--light);
+            transition: all 0.2s ease;
+        }
+        
+        .history-item:hover {
+            background-color: #e6e8eb;
+        }
+        
+        .history-password {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-width: 70%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .history-actions-mini {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .history-actions-mini button {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 3px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+        
+        .history-actions-mini button:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .upgrade-banner {
+            background: linear-gradient(to right, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .upgrade-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .upgrade-btn {
+            display: inline-block;
+            background-color: white;
+            color: var(--primary);
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin-top: 10px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .upgrade-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        @media (max-width: 500px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .logo {
+                font-size: 2rem;
+            }
+            
+            .password-field {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">Secure<span>Pass</span></div>
+            <div class="subtitle">Generate strong, secure passwords with ease</div>
+        </header>
+        
+        <div class="password-display">
+            <div class="password-field" id="password-display">Your secure password</div>
+            <button class="copy-btn" id="copy-btn" title="Copy to clipboard">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="generate-section">
+            <div class="strength-meter">
+                <div class="strength-meter-fill" id="strength-meter-fill"></div>
+            </div>
+            <div class="strength-text">
+                <span>Password Strength:</span>
+                <span id="strength-text">Generate a password</span>
+            </div>
+            
+            <div class="settings">
+                <div class="setting-row">
+                    <div class="setting-label">Password Length</div>
+                    <div class="length-controls">
+                        <button class="length-btn" id="decrease-length">-</button>
+                        <div class="length-value" id="length-value">12</div>
+                        <button class="length-btn" id="increase-length">+</button>
+                    </div>
+                </div>
+                
+                <div class="setting-row">
+                    <div class="setting-label">Include Uppercase</div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="uppercase-toggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                
+                <div class="setting-row">
+                    <div class="setting-label">Include Numbers</div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="numbers-toggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                
+                <div class="setting-row">
+                    <div class="setting-label">Include Symbols</div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="symbols-toggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                
+                <div class="setting-row">
+                    <div class="setting-label">Avoid Similar Characters</div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="similar-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <button class="gen-btn" id="generate-btn">Generate Password</button>
+        </div>
+        
+        <div class="history-panel">
+            <div class="history-header">
+                <div class="history-title">Recently Generated</div>
+                <div class="history-actions">
+                    <button id="clear-history">Clear All</button>
+                </div>
+            </div>
+            
+            <div class="history-list" id="history-list">
+                <!-- Password history will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const passwordDisplay = document.getElementById('password-display');
+        const copyBtn = document.getElementById('copy-btn');
+        const strengthMeterFill = document.getElementById('strength-meter-fill');
+        const strengthText = document.getElementById('strength-text');
+        const decreaseBtn = document.getElementById('decrease-length');
+        const increaseBtn = document.getElementById('increase-length');
+        const lengthValue = document.getElementById('length-value');
+        const uppercaseToggle = document.getElementById('uppercase-toggle');
+        const numbersToggle = document.getElementById('numbers-toggle');
+        const symbolsToggle = document.getElementById('symbols-toggle');
+        const similarToggle = document.getElementById('similar-toggle');
+        const generateBtn = document.getElementById('generate-btn');
+        const historyList = document.getElementById('history-list');
+        const clearHistoryBtn = document.getElementById('clear-history');
+        const upgradeBtn = document.getElementById('upgrade-btn');
+
+        // Password settings
+        let passwordLength = 12;
+        let includeUppercase = true;
+        let includeNumbers = true;
+        let includeSymbols = true;
+        let avoidSimilar = false;
+        
+        // Password characters
+        const lowercaseChars = 'abcdefghijklmnopqrstuvwxyz';
+        const uppercaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const numberChars = '0123456789';
+        const symbolChars = '!@#$%^&*()_+~`|}{[]:;?><,./-=';
+        const similarChars = 'il1Lo0O';
+        
+        // Password history
+        let passwordHistory = [];
+        const maxHistoryItems = 5;
+        
+        // Initialize
+        loadHistory();
+        updateUI();
+        
+        // Event Listeners
+        copyBtn.addEventListener('click', copyPassword);
+        decreaseBtn.addEventListener('click', () => changeLength(-1));
+        increaseBtn.addEventListener('click', () => changeLength(1));
+        generateBtn.addEventListener('click', generatePassword);
+        clearHistoryBtn.addEventListener('click', clearHistory);
+        
+        // Toggle switches
+        uppercaseToggle.addEventListener('change', () => {
+            includeUppercase = uppercaseToggle.checked;
+        });
+        
+        numbersToggle.addEventListener('change', () => {
+            includeNumbers = numbersToggle.checked;
+        });
+        
+        symbolsToggle.addEventListener('change', () => {
+            includeSymbols = symbolsToggle.checked;
+        });
+        
+        similarToggle.addEventListener('change', () => {
+            avoidSimilar = similarToggle.checked;
+        });
+        
+        upgradeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            showUpgradeMessage();
+        });
+        
+        // Functions
+        function generatePassword() {
+            // Ensure at least one character type is selected
+            if (!includeUppercase && !includeNumbers && !includeSymbols) {
+                alert('Please select at least one character type!');
+                return;
+            }
+            
+            let chars = lowercaseChars;
+            if (includeUppercase) chars += uppercaseChars;
+            if (includeNumbers) chars += numberChars;
+            if (includeSymbols) chars += symbolChars;
+            
+            // Remove similar characters if option is selected
+            if (avoidSimilar) {
+                for (let i = 0; i < similarChars.length; i++) {
+                    chars = chars.replace(similarChars[i], '');
+                }
+            }
+            
+            let password = '';
+            let hasLowercase = false;
+            let hasUppercase = false;
+            let hasNumber = false;
+            let hasSymbol = false;
+            
+            // Generate random password
+            for (let i = 0; i < passwordLength; i++) {
+                const randomIndex = Math.floor(Math.random() * chars.length);
+                const char = chars[randomIndex];
+                password += char;
+                
+                // Check character types for strength calculation
+                if (lowercaseChars.includes(char)) hasLowercase = true;
+                if (uppercaseChars.includes(char)) hasUppercase = true;
+                if (numberChars.includes(char)) hasNumber = true;
+                if (symbolChars.includes(char)) hasSymbol = true;
+            }
+            
+            // Ensure password includes required character types if selected
+            let tries = 0;
+            const maxTries = 20;
+            
+            while (tries < maxTries && (
+                (includeUppercase && !hasUppercase) || 
+                (includeNumbers && !hasNumber) || 
+                (includeSymbols && !hasSymbol) ||
+                !hasLowercase
+            )) {
+                password = '';
+                hasLowercase = false;
+                hasUppercase = false;
+                hasNumber = false;
+                hasSymbol = false;
+                
+                for (let i = 0; i < passwordLength; i++) {
+                    const randomIndex = Math.floor(Math.random() * chars.length);
+                    const char = chars[randomIndex];
+                    password += char;
+                    
+                    if (lowercaseChars.includes(char)) hasLowercase = true;
+                    if (uppercaseChars.includes(char)) hasUppercase = true;
+                    if (numberChars.includes(char)) hasNumber = true;
+                    if (symbolChars.includes(char)) hasSymbol = true;
+                }
+                
+                tries++;
+            }
+            
+            // Update password display
+            passwordDisplay.textContent = password;
+            
+            // Calculate and display password strength
+            updateStrengthMeter(password);
+            
+            // Add to history
+            addToHistory(password);
+        }
+        
+        function updateStrengthMeter(password) {
+            // Calculate password strength based on various factors
+            const length = password.length;
+            const hasLower = /[a-z]/.test(password);
+            const hasUpper = /[A-Z]/.test(password);
+            const hasNumber = /[0-9]/.test(password);
+            const hasSymbol = /[^A-Za-z0-9]/.test(password);
+            
+            const charVariety = (hasLower ? 1 : 0) + (hasUpper ? 1 : 0) + (hasNumber ? 1 : 0) + (hasSymbol ? 1 : 0);
+            
+            // Check for repeating characters
+            const repeatingChars = password.match(/(.)\1{2,}/g);
+            const hasRepeats = repeatingChars != null;
+            
+            // Check for sequences (e.g., "abc", "123")
+            const hasSequence = /abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|012|123|234|345|456|567|678|789/i.test(password);
+            
+            // Calculate score (max 100)
+            let score = 0;
+            score += Math.min(length * 4, 40); // Up to 40 points for length
+            score += charVariety * 10; // Up to 40 points for character variety
+            
+            // Penalties
+            if (hasRepeats) score -= 10;
+            if (hasSequence) score -= 10;
+            
+            // Ensure score is within 0-100
+            score = Math.max(0, Math.min(100, score));
+            
+            // Update UI
+            strengthMeterFill.style.width = `${score}%`;
+            
+            if (score < 40) {
+                strengthMeterFill.style.backgroundColor = 'var(--danger)';
+                strengthText.textContent = 'Weak';
+                strengthText.style.color = 'var(--danger)';
+            } else if (score < 70) {
+                strengthMeterFill.style.backgroundColor = 'var(--warning)';
+                strengthText.textContent = 'Medium';
+                strengthText.style.color = 'var(--warning)';
+            } else {
+                strengthMeterFill.style.backgroundColor = 'var(--success)';
+                strengthText.textContent = 'Strong';
+                strengthText.style.color = 'var(--success)';
+            }
+        }
+        
+        function copyPassword() {
+            const password = passwordDisplay.textContent;
+            if (password === 'Your secure password') return;
+            
+            navigator.clipboard.writeText(password).then(() => {
+                // Visual feedback
+                passwordDisplay.parentElement.classList.add('copied');
+                setTimeout(() => {
+                    passwordDisplay.parentElement.classList.remove('copied');
+                }, 1500);
+            });
+        }
+        
+        function changeLength(change) {
+            passwordLength = Math.max(6, Math.min(30, passwordLength + change));
+            updateUI();
+        }
+        
+        function updateUI() {
+            lengthValue.textContent = passwordLength;
+        }
+        
+        function addToHistory(password) {
+            const now = new Date();
+            const timestamp = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            // Add to the beginning of the array
+            passwordHistory.unshift({
+                password: password,
+                timestamp: timestamp
+            });
+            
+            // Limit history size
+            if (passwordHistory.length > maxHistoryItems) {
+                passwordHistory.pop();
+            }
+            
+            // Save and update history display
+            saveHistory();
+            renderHistory();
+        }
+        
+        function renderHistory() {
+            historyList.innerHTML = '';
+            
+            if (passwordHistory.length === 0) {
+                historyList.innerHTML = '<div style="padding: 10px; color: var(--gray);">No passwords generated yet</div>';
+                return;
+            }
+            
+            passwordHistory.forEach((item, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                historyItem.innerHTML = `
+                    <div class="history-password">${item.password}</div>
+                    <div class="history-actions-mini">
+                        <button class="use-btn" title="Use this password" data-index="${index}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </button>
+                        <button class="copy-history-btn" title="Copy to clipboard" data-index="${index}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                
+                historyList.appendChild(historyItem);
+            });
+            
+            // Add event listeners to history buttons
+            document.querySelectorAll('.use-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.getAttribute('data-index'));
+                    passwordDisplay.textContent = passwordHistory[index].password;
+                    updateStrengthMeter(passwordHistory[index].password);
+                });
+            });
+            
+            document.querySelectorAll('.copy-history-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.getAttribute('data-index'));
+                    navigator.clipboard.writeText(passwordHistory[index].password);
+                    
+                    // Visual feedback
+                    const historyItem = btn.closest('.history-item');
+                    historyItem.style.backgroundColor = 'rgba(46, 204, 113, 0.1)';
+                    setTimeout(() => {
+                        historyItem.style.backgroundColor = '';
+                    }, 1500);
+                });
+            });
+        }
+        
+        function clearHistory() {
+            passwordHistory = [];
+            saveHistory();
+            renderHistory();
+        }
+        
+        function saveHistory() {
+            localStorage.setItem('passwordHistory', JSON.stringify(passwordHistory));
+        }
+        
+        function loadHistory() {
+            const saved = localStorage.getItem('passwordHistory');
+            if (saved) {
+                passwordHistory = JSON.parse(saved);
+                renderHistory();
+            } else {
+                renderHistory();
+            }
+        }
+        
+        function showUpgradeMessage() {
+            alert('In a real app, this would redirect to a payment page.\n\nPremium features would include:\n- Secure password storage\n- Cross-device sync\n- Password strength analysis\n- Data breach monitoring\n- Password auto-fill\n- Biometric security\n- 24/7 support');
+        }
+        
+        // Generate a password on initial load
+        setTimeout(generatePassword, 500);
+    </script>
+</body>
+</html>
